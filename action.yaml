@@ -14,8 +14,8 @@ inputs:
   repository:
     required: true
     default: ${{ github.repository }}
-    description: '${{ github.repository }}'
+    description: 'username/repository_name'
   pr_number:
     required: true
     default: ${{ github.event.pull_request.number }}
-    description: '${{ github.event.pull_request.number }}'
+    description: 'pull request number'

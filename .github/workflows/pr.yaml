@@ -12,7 +12,7 @@ jobs:
     - uses: actions/checkout@v4
 
     - name: ExifPR
-      uses: xryuseix/exifpr@1.0
+      uses: xryuseix/exifpr@v1.0
       with:
         target_ext: .png .jpeg .jpg .gif .bmp .pdf .mp4 .mp3 .wav
         repository: ${{ github.repository }}
