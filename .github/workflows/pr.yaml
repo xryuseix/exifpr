@@ -1,0 +1,21 @@
+name: ExifPR
+
+on:
+  pull_request:
+    types: [opened]
+
+jobs:
+  exifpr:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: ExifPR
+      uses: xryuseix/exifpr@1.0
+      with:
+        target_ext: .png .jpeg .jpg .gif .bmp .pdf .mp4 .mp3 .wav
+        repository: ${{ github.repository }}
+        pr_number: ${{ github.event.pull_request.number }}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

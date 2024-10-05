@@ -1,0 +1,21 @@
+name: ExifPR
+description: comment exif info to PR
+author: xryuseix
+runs:
+  using: docker
+  image: Dockerfile
+branding:
+  icon: image
+  color: green
+inputs:
+  target_ext:
+    default: .png .jpeg .jpg .gif .bmp .pdf .mp4 .mp3 .wav
+    description: 'target file extensions'
+  repository:
+    required: true
+    default: ${{ github.repository }}
+    description: '${{ github.repository }}'
+  pr_number:
+    required: true
+    default: ${{ github.event.pull_request.number }}
+    description: '${{ github.event.pull_request.number }}'
