@@ -19,7 +19,6 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
       - name: Set PR number
         id: pr_number
         run: |
@@ -28,8 +27,22 @@ jobs:
           elif [[ "${{ github.event_name }}" == "issue_comment" ]]; then
             echo "PR_NUMBER=${{ github.event.issue.number }}" >> $GITHUB_ENV
           fi
+      - name: Get Branch
+        id: get_branch
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            echo "BRANCH=${{ github.event.pull_request.head.ref }}" >> $GITHUB_ENV
+          elif [[ "${{ github.event_name }}" == "issue_comment" ]]; then
+            BRANCH_NAME=$(gh pr view ${{ env.PR_NUMBER }} --json headRefName --jq .headRefName --repo ${{ github.repository }})
+            echo "BRANCH_NAME=${BRANCH_NAME}" >> $GITHUB_ENV
+          fi
+        env:
+          GH_TOKEN: ${{ github.token }}
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.env.BRANCH_NAME }}
       - name: ExifPR
-        uses: xryuseix/exifpr@v2.1
+        uses: xryuseix/exifpr@v2.1.1
         with:
           target_ext: .png .jpeg .jpg .gif .bmp .pdf .mp4 .mp3 .wav
           repository: ${{ github.repository }}

@@ -33,6 +33,7 @@ func sanitizeExt(extEnv string) []string {
 func IsFile(path string) bool {
 	info, err := os.Stat(path)
 	if err != nil {
+		fmt.Println(err)
 		return false
 	}
 	return !info.IsDir()
@@ -52,7 +53,7 @@ func filterExt(files []string, targetExt []string) []string {
 	var filtered []string
 	for _, file := range files {
 		ext := filepath.Ext(file)
-		if slices.Contains(targetExt, strings.ToLower(ext)) {
+		if IsFile(file) && slices.Contains(targetExt, strings.ToLower(ext)) {
 			filtered = append(filtered, file)
 		}
 	}
