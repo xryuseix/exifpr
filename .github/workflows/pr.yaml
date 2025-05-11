@@ -3,13 +3,32 @@ name: ExifPR
 on:
   pull_request:
     types: [opened]
+  issue_comment:
+    types:
+      - created
 
 jobs:
   exifpr:
+    if: (github.event.issue.pull_request != null) && github.event.comment.body == '!github exifpr'
     runs-on: ubuntu-latest
 
     steps:
+    - uses: actions/github-script@v2
+      id: set-target-branch
+      with:
+        github-token: ${{secrets.GITHUB_TOKEN}}
+        result-encoding: string
+        script: |
+          const pull_request = await github.pulls.get({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            pull_number: context.issue.number
+          })
+          return pull_request.data.head.ref
+
     - uses: actions/checkout@v4
+      with:
+        ref: ${{ steps.set-target-branch.outputs.result }}
 
     - name: ExifPR
       uses: xryuseix/exifpr@v1.0
