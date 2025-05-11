@@ -60,3 +60,67 @@ func TestSanitizeExt(t *testing.T) {
 		})
 	}
 }
+func TestFindFiles(t *testing.T) {
+	tests := []struct {
+		name     string
+		aFileStr string
+		exts     []string
+		expected []string
+	}{
+		{
+			name:     "Single valid file with matching extension",
+			aFileStr: "image.jpg\n",
+			exts:     []string{".jpg"},
+			expected: []string{"image.jpg"},
+		},
+		{
+			name:     "Multiple files with mixed extensions",
+			aFileStr: "image.jpg\nvideo.mp4\ndocument.pdf\n",
+			exts:     []string{".jpg", ".mp4"},
+			expected: []string{"image.jpg", "video.mp4"},
+		},
+		{
+			name:     "No matching extensions",
+			aFileStr: "image.jpg\nvideo.mp4\ndocument.pdf\n",
+			exts:     []string{".png"},
+			expected: []string{},
+		},
+		{
+			name:     "Empty input string",
+			aFileStr: "",
+			exts:     []string{".jpg"},
+			expected: []string{},
+		},
+		{
+			name:     "File with no extension",
+			aFileStr: "file\n",
+			exts:     []string{".jpg"},
+			expected: []string{},
+		},
+		{
+			name:     "File with leading and trailing spaces",
+			aFileStr: "  image.jpg  \n",
+			exts:     []string{".jpg"},
+			expected: []string{"image.jpg"},
+		},
+		{
+			name:     "Directory path in input",
+			aFileStr: "image.jpg\ndir/\n",
+			exts:     []string{".jpg"},
+			expected: []string{"image.jpg"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := findFiles(tt.aFileStr, tt.exts)
+			if len(result) == 0 && len(tt.expected) == 0 {
+				return
+			}
+			if !reflect.DeepEqual(result, tt.expected) {
+				t.Errorf("findFiles(%q, %v) = %v, want %v", tt.aFileStr, tt.exts, result, tt.expected)
+			}
+		})
+	}
+}
+

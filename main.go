@@ -30,22 +30,28 @@ func sanitizeExt(extEnv string) []string {
 	return sanitized
 }
 
-func findFiles(dir string, exts []string) ([]string, error) {
+func IsFile(path string) bool {
+	info, err := os.Stat(path)
+	if err != nil {
+		return false
+	}
+	return !info.IsDir()
+}
+
+func findFiles(aFileStr string, exts []string) []string {
 	var files []string
-	err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
+	for _, path := range strings.Split(aFileStr, "\n") {
+		if path == "" {
+			continue
 		}
+		path = strings.TrimSpace(path)
 		ext := filepath.Ext(path)
-		if !info.IsDir() && slices.Contains(exts, strings.ToLower(ext)) {
+		isDir := IsFile(path)
+		if !isDir && slices.Contains(exts, strings.ToLower(ext)) {
 			files = append(files, path)
 		}
-		return nil
-	})
-	if err != nil {
-		return nil, err
 	}
-	return files, err
+	return files
 }
 
 func getExifInfo(path string) (string, string, error) {
@@ -138,11 +144,7 @@ func commentToPR(report string) error {
 func main() {
 	fmt.Println("Starting...")
 	extEnv := sanitizeExt(os.Getenv("INPUT_TARGET_EXT"))
-	files, err := findFiles(".", extEnv)
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
+	files := findFiles(os.Getenv("INPUT_ADDED_FILES"), extEnv)
 	if len(files) == 0 {
 		fmt.Println("No files found")
 		os.Exit(0)
@@ -161,7 +163,7 @@ func main() {
 		fmt.Println("No content to report")
 		os.Exit(0)
 	}
-	err = commentToPR(report)
+	err := commentToPR(report)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
