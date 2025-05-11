@@ -114,7 +114,7 @@ func genReport(exifs []ExifInfo) string {
 		report += exif.StdOut
 		report += "\n"
 		report += exif.StdErr
-		report += "```\n\n"
+		report += "```\n</details>\n\n"
 	}
 	return report
 }
