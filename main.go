@@ -25,7 +25,7 @@ func sanitizeExt(extEnv string) []string {
 		if !strings.HasPrefix(ext, ".") {
 			ext = fmt.Sprintf(".%s", ext)
 		}
-		sanitized = append(sanitized, ext)
+		sanitized = append(sanitized, strings.ToLower(ext))
 	}
 	return sanitized
 }
@@ -37,7 +37,7 @@ func findFiles(dir string, exts []string) ([]string, error) {
 			return err
 		}
 		ext := filepath.Ext(path)
-		if !info.IsDir() && slices.Contains(exts, ext) {
+		if !info.IsDir() && slices.Contains(exts, strings.ToLower(ext)) {
 			files = append(files, path)
 		}
 		return nil
@@ -51,9 +51,9 @@ func findFiles(dir string, exts []string) ([]string, error) {
 func getExifInfo(path string) (string, string, error) {
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
-	
+
 	cmd := exec.Command("exiftool", path)
-	
+
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
 	err := cmd.Run()
@@ -62,8 +62,8 @@ func getExifInfo(path string) (string, string, error) {
 
 type ExifInfo struct {
 	FilePath string
-	StdOut  string
-	StdErr  string
+	StdOut   string
+	StdErr   string
 }
 
 func genReport(exifs []ExifInfo) string {
@@ -81,9 +81,9 @@ func genReport(exifs []ExifInfo) string {
 }
 
 type Env struct {
-	token string
-	owner string
-	repo  string
+	token    string
+	owner    string
+	repo     string
 	prNumber int
 }
 
@@ -118,20 +118,20 @@ func commentToPR(report string) error {
 		return err
 	}
 
-    ctx := context.Background()
-    ts := oauth2.StaticTokenSource(
-        &oauth2.Token{AccessToken: env.token},
-    )
-    tc := oauth2.NewClient(ctx, ts)
-    client := github.NewClient(tc)
+	ctx := context.Background()
+	ts := oauth2.StaticTokenSource(
+		&oauth2.Token{AccessToken: env.token},
+	)
+	tc := oauth2.NewClient(ctx, ts)
+	client := github.NewClient(tc)
 
 	comment := &github.IssueComment{
 		Body: github.String(report),
 	}
 	_, _, err = client.Issues.CreateComment(ctx, env.owner, env.repo, env.prNumber, comment)
-    if err != nil {
-        return err
-    }
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
