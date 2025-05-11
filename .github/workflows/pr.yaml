@@ -9,7 +9,7 @@ on:
 
 jobs:
   exifpr:
-    if: (github.event.issue.pull_request != null) || github.event.comment.body == '!github exifpr'
+    if: (github.event.issue.pull_request != null) || github.event.comment.body == '@github exifpr'
     runs-on: ubuntu-latest
 
     steps:

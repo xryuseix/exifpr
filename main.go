@@ -169,10 +169,12 @@ func main() {
 	fmt.Println("Starting...")
 	env, err := getEnv()
 	if err != nil {
+		fmt.Println(err)
 		os.Exit(1)
 	}
 	files, err := findFiles(env)
 	if err != nil {
+		fmt.Println(err)
 		os.Exit(1)
 	}
 	if len(files) == 0 {
