@@ -38,20 +38,52 @@ func IsFile(path string) bool {
 	return !info.IsDir()
 }
 
-func findFiles(aFileStr string, exts []string) []string {
-	var files []string
-	for _, path := range strings.Split(aFileStr, "\n") {
-		if path == "" {
-			continue
-		}
-		path = strings.TrimSpace(path)
-		ext := filepath.Ext(path)
-		isDir := IsFile(path)
-		if !isDir && slices.Contains(exts, strings.ToLower(ext)) {
-			files = append(files, path)
+func getGitHubClient(token string) (*github.Client, context.Context) {
+	ctx := context.Background()
+	ts := oauth2.StaticTokenSource(
+		&oauth2.Token{AccessToken: token},
+	)
+	tc := oauth2.NewClient(ctx, ts)
+	client := github.NewClient(tc)
+	return client, ctx
+}
+
+func filterExt(files []string, targetExt []string) []string {
+	var filtered []string
+	for _, file := range files {
+		ext := filepath.Ext(file)
+		if slices.Contains(targetExt, strings.ToLower(ext)) {
+			filtered = append(filtered, file)
 		}
 	}
-	return files
+	return filtered
+}
+
+func findFiles(env Env) ([]string, error) {
+	client, ctx := getGitHubClient(env.token)
+
+	var allFiles []string
+	opt := &github.ListOptions{PerPage: 100}
+	for {
+		files, resp, err := client.PullRequests.ListFiles(ctx, env.owner, env.repo, env.prNumber, opt)
+		if err != nil {
+			fmt.Printf("Error getting PR files: %v\n", err)
+			return []string{}, err
+		}
+		var aFiles []*github.CommitFile
+		aFiles = append(aFiles, files...)
+		for _, file := range aFiles {
+			if file.GetStatus() != "added" {
+				continue
+			}
+			allFiles = append(allFiles, file.GetFilename())
+		}
+		if resp.NextPage == 0 {
+			break
+		}
+		opt.Page = resp.NextPage
+	}
+	return filterExt(allFiles, env.targetExt), nil
 }
 
 func getExifInfo(path string) (string, string, error) {
@@ -87,13 +119,16 @@ func genReport(exifs []ExifInfo) string {
 }
 
 type Env struct {
-	token    string
-	owner    string
-	repo     string
-	prNumber int
+	targetExt []string
+	token     string
+	owner     string
+	repo      string
+	prNumber  int
 }
 
 func getEnv() (Env, error) {
+	targetExt := sanitizeExt(os.Getenv("INPUT_TARGET_EXT"))
+
 	token := os.Getenv("GITHUB_TOKEN")
 	if token == "" {
 		return Env{}, fmt.Errorf("no GitHub Token present")
@@ -115,26 +150,15 @@ func getEnv() (Env, error) {
 		return Env{}, fmt.Errorf("error converting PR number to integer: %v", err)
 	}
 
-	return Env{token, owner, repo, prNumberInt}, nil
+	return Env{targetExt, token, owner, repo, prNumberInt}, nil
 }
 
-func commentToPR(report string) error {
-	env, err := getEnv()
-	if err != nil {
-		return err
-	}
-
-	ctx := context.Background()
-	ts := oauth2.StaticTokenSource(
-		&oauth2.Token{AccessToken: env.token},
-	)
-	tc := oauth2.NewClient(ctx, ts)
-	client := github.NewClient(tc)
-
+func commentToPR(report string, env Env) error {
+	client, ctx := getGitHubClient(env.token)
 	comment := &github.IssueComment{
 		Body: github.String(report),
 	}
-	_, _, err = client.Issues.CreateComment(ctx, env.owner, env.repo, env.prNumber, comment)
+	_, _, err := client.Issues.CreateComment(ctx, env.owner, env.repo, env.prNumber, comment)
 	if err != nil {
 		return err
 	}
@@ -143,12 +167,19 @@ func commentToPR(report string) error {
 
 func main() {
 	fmt.Println("Starting...")
-	extEnv := sanitizeExt(os.Getenv("INPUT_TARGET_EXT"))
-	files := findFiles(os.Getenv("INPUT_ADDED_FILES"), extEnv)
+	env, err := getEnv()
+	if err != nil {
+		os.Exit(1)
+	}
+	files, err := findFiles(env)
+	if err != nil {
+		os.Exit(1)
+	}
 	if len(files) == 0 {
 		fmt.Println("No files found")
 		os.Exit(0)
 	}
+
 	var exifs []ExifInfo
 	for _, file := range files {
 		stdout, stderr, err := getExifInfo(file)
@@ -163,7 +194,7 @@ func main() {
 		fmt.Println("No content to report")
 		os.Exit(0)
 	}
-	err := commentToPR(report)
+	err = commentToPR(report, env)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)

@@ -13,18 +13,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Set Added Files
-      id: added_files
-      run: |
-        echo "::set-output name=added_files::$(git diff origin/${GITHUB_BASE_REF}..origin/${GITHUB_HEAD_REF} --name-only --diff-filter=A)
-
     - uses: actions/checkout@v4
-
     - name: ExifPR
       uses: xryuseix/exifpr@v1.0
       with:
         target_ext: .png .jpeg .jpg .gif .bmp .pdf .mp4 .mp3 .wav
-        added_files: ${{ steps.check_added_files.outputs.added_files }}
         repository: ${{ github.repository }}
         pr_number: ${{ github.event.pull_request.number }}
       env:

@@ -60,67 +60,67 @@ func TestSanitizeExt(t *testing.T) {
 		})
 	}
 }
-func TestFindFiles(t *testing.T) {
+
+func TestFilterExt(t *testing.T) {
 	tests := []struct {
-		name     string
-		aFileStr string
-		exts     []string
-		expected []string
+		name      string
+		files     []string
+		targetExt []string
+		expected  []string
 	}{
 		{
-			name:     "Single valid file with matching extension",
-			aFileStr: "image.jpg\n",
-			exts:     []string{".jpg"},
-			expected: []string{"image.jpg"},
+			name:      "Single matching extension",
+			files:     []string{"image.jpg", "document.pdf", "photo.png"},
+			targetExt: []string{".jpg"},
+			expected:  []string{"image.jpg"},
 		},
 		{
-			name:     "Multiple files with mixed extensions",
-			aFileStr: "image.jpg\nvideo.mp4\ndocument.pdf\n",
-			exts:     []string{".jpg", ".mp4"},
-			expected: []string{"image.jpg", "video.mp4"},
+			name:      "Multiple matching extensions",
+			files:     []string{"image.jpg", "photo.png", "graphic.gif"},
+			targetExt: []string{".jpg", ".png"},
+			expected:  []string{"image.jpg", "photo.png"},
 		},
 		{
-			name:     "No matching extensions",
-			aFileStr: "image.jpg\nvideo.mp4\ndocument.pdf\n",
-			exts:     []string{".png"},
-			expected: []string{},
+			name:      "No matching extensions",
+			files:     []string{"image.jpg", "photo.png"},
+			targetExt: []string{".gif"},
+			expected:  []string{},
 		},
 		{
-			name:     "Empty input string",
-			aFileStr: "",
-			exts:     []string{".jpg"},
-			expected: []string{},
+			name:      "Empty file list",
+			files:     []string{},
+			targetExt: []string{".jpg"},
+			expected:  []string{},
 		},
 		{
-			name:     "File with no extension",
-			aFileStr: "file\n",
-			exts:     []string{".jpg"},
-			expected: []string{},
+			name:      "Empty target extensions",
+			files:     []string{"image.jpg", "photo.png"},
+			targetExt: []string{},
+			expected:  []string{},
 		},
 		{
-			name:     "File with leading and trailing spaces",
-			aFileStr: "  image.jpg  \n",
-			exts:     []string{".jpg"},
-			expected: []string{"image.jpg"},
+			name:      "Case insensitive matching",
+			files:     []string{"image.JPG", "photo.PNG", "graphic.GIF"},
+			targetExt: []string{".jpg", ".png"},
+			expected:  []string{"image.JPG", "photo.PNG"},
 		},
 		{
-			name:     "Directory path in input",
-			aFileStr: "image.jpg\ndir/\n",
-			exts:     []string{".jpg"},
-			expected: []string{"image.jpg"},
+			name:      "Files without extensions",
+			files:     []string{"README", "LICENSE", "image.jpg"},
+			targetExt: []string{".jpg"},
+			expected:  []string{"image.jpg"},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := findFiles(tt.aFileStr, tt.exts)
+			result := filterExt(tt.files, tt.targetExt)
 			if len(result) == 0 && len(tt.expected) == 0 {
 				return
 			}
 			if !reflect.DeepEqual(result, tt.expected) {
-				t.Errorf("findFiles(%q, %v) = %v, want %v", tt.aFileStr, tt.exts, result, tt.expected)
+				t.Errorf("filterExt(%v, %v) = %v, want %v", tt.files, tt.targetExt, result, tt.expected)
 			}
 		})
 	}
 }
-
