@@ -17,7 +17,7 @@ import (
 
 func sanitizeExt(extEnv string) []string {
 	exts := strings.Split(extEnv, " ")
-	var sanitized []string
+	sanitized := []string{}
 	for _, ext := range exts {
 		if ext == "" {
 			continue
@@ -71,9 +71,7 @@ func findFiles(env Env) ([]string, error) {
 			fmt.Printf("Error getting PR files: %v\n", err)
 			return []string{}, err
 		}
-		var aFiles []*github.CommitFile
-		aFiles = append(aFiles, files...)
-		for _, file := range aFiles {
+		for _, file := range files {
 			if file.GetStatus() != "added" {
 				continue
 			}
@@ -96,7 +94,7 @@ func getExifInfo(path string) (string, string, error) {
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
 	err := cmd.Run()
-	return cmd.String(), stdout.String(), err
+	return stdout.String(), stderr.String(), err
 }
 
 type ExifInfo struct {
