@@ -1,5 +1,10 @@
 name: ExifPR
 
+permissions:
+  contents: read
+  pull-requests: write
+  issues: read
+
 on:
   pull_request:
     types: [opened]
@@ -14,7 +19,9 @@ jobs:
       (
         github.event_name == 'issue_comment' &&
         github.event.issue.pull_request &&
-        contains(github.event.comment.body, '@github exifpr')
+        contains(github.event.comment.body, '@github exifpr') &&
+        github.event.comment.author_association != 'NONE' &&
+        github.event.comment.author_association != 'FIRST_TIMER'
       )
     runs-on: ubuntu-latest
 
@@ -31,18 +38,19 @@ jobs:
         id: get_branch
         run: |
           if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            echo "BRANCH=${{ github.event.pull_request.head.ref }}" >> $GITHUB_ENV
+            echo "BRANCH=${HEAD_REF}" >> $GITHUB_ENV
           elif [[ "${{ github.event_name }}" == "issue_comment" ]]; then
             BRANCH_NAME=$(gh pr view ${{ env.PR_NUMBER }} --json headRefName --jq .headRefName --repo ${{ github.repository }})
             echo "BRANCH_NAME=${BRANCH_NAME}" >> $GITHUB_ENV
           fi
         env:
           GH_TOKEN: ${{ github.token }}
-      - uses: actions/checkout@v4
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
           ref: ${{ env.BRANCH_NAME }}
       - name: ExifPR
-        uses: xryuseix/exifpr@v2.1.3
+        uses: xryuseix/exifpr@a54734b71002716e5759cddf48e53056a0733627 # v2.1.3
         with:
           target_ext: .png .jpeg .jpg .gif .bmp .pdf .mp4 .mp3 .wav
           repository: ${{ github.repository }}
