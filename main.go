@@ -152,16 +152,47 @@ func getEnv() (Env, error) {
 	return Env{targetExt, token, owner, repo, prNumberInt}, nil
 }
 
+func findExistingReport(env Env) (*int64, error) {
+	client, ctx := getGitHubClient(env.token)
+	opt := &github.IssueListCommentsOptions{
+		ListOptions: github.ListOptions{PerPage: 100},
+	}
+	for {
+		comments, resp, err := client.Issues.ListComments(ctx, env.owner, env.repo, env.prNumber, opt)
+		if err != nil {
+			return nil, err
+		}
+		for _, comment := range comments {
+			if strings.HasPrefix(comment.GetBody(), "## 📝 Exif Report") {
+				id := comment.GetID()
+				return &id, nil
+			}
+		}
+		if resp.NextPage == 0 {
+			break
+		}
+		opt.Page = resp.NextPage
+	}
+	return nil, nil
+}
+
 func commentToPR(report string, env Env) error {
 	client, ctx := getGitHubClient(env.token)
 	comment := &github.IssueComment{
 		Body: github.String(report),
 	}
-	_, _, err := client.Issues.CreateComment(ctx, env.owner, env.repo, env.prNumber, comment)
+
+	existingID, err := findExistingReport(env)
 	if err != nil {
-		return err
+		return fmt.Errorf("error finding existing report: %v", err)
 	}
-	return nil
+
+	if existingID != nil {
+		_, _, err = client.Issues.EditComment(ctx, env.owner, env.repo, *existingID, comment)
+	} else {
+		_, _, err = client.Issues.CreateComment(ctx, env.owner, env.repo, env.prNumber, comment)
+	}
+	return err
 }
 
 func main() {

@@ -221,6 +221,16 @@ func TestGenReport(t *testing.T) {
 			t.Error("genReport() missing details tag")
 		}
 	})
+
+	t.Run("Starts with report header for findExistingReport identification", func(t *testing.T) {
+		exifs := []ExifInfo{
+			{FilePath: "test.jpg", StdOut: "data", StdErr: ""},
+		}
+		result := genReport(exifs)
+		if !strings.HasPrefix(result, "## 📝 Exif Report") {
+			t.Errorf("genReport() should start with report header, got: %q", result)
+		}
+	})
 }
 
 func TestGetEnv(t *testing.T) {
