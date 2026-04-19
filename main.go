@@ -72,7 +72,8 @@ func findFiles(env Env) ([]string, error) {
 			return []string{}, err
 		}
 		for _, file := range files {
-			if file.GetStatus() != "added" {
+			status := file.GetStatus()
+			if status != "added" && status != "modified" {
 				continue
 			}
 			allFiles = append(allFiles, file.GetFilename())
